@@ -3,6 +3,26 @@ import mediapipe as mp
 import numpy as np
 import tensorflow as tf
 from collections import deque
+def enhance_night_frame(frame):
+    # Step 1: Gamma correction to increase brightness
+    gamma = 0.6
+    lookup_table = np.array([
+        ((i / 255.0) ** gamma) * 255
+        for i in range(256)
+    ]).astype("uint8")
+    bright_frame = cv2.LUT(frame, lookup_table)
+    # Step 2: Convert BGR to LAB
+    lab = cv2.cvtColor(bright_frame, cv2.COLOR_BGR2LAB)
+    # Step 3: Apply CLAHE to improve local contrast
+    l_channel, a_channel, b_channel = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    enhanced_l = clahe.apply(l_channel)
+    # Step 4: Merge channels
+    enhanced_lab = cv2.merge((enhanced_l, a_channel, b_channel))
+    # Step 5: Convert back to BGR
+    enhanced_frame = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+    return enhanced_frame
+
 
 # --- LOAD BOTH MODELS ---
 try:
@@ -87,6 +107,8 @@ try:
     with FaceLandmarker.create_from_options(options) as landmarker:
         while True:
             success, frame = cap.read()
+            frame = enhance_night_frame(frame)
+
             if not success:
                 break
 

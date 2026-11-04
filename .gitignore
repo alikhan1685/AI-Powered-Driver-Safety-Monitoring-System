@@ -9,4 +9,4 @@ old_dataset/
 
 # Ignore Python cache
 __pycache__/
-*.py
+*.pyc

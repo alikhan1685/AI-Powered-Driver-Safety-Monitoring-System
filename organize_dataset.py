@@ -11,7 +11,7 @@ SOURCE_FOLDER = r"D:\AI-Powered Truck Driver Safety Monitoring System\archive (1
 # This will be created inside your project folder (where this script is saved)
 BASE_DEST = "dataset"
 OPEN_DIR = os.path.join(BASE_DEST, "open")
-CLOSED_DIR = os.path.join(BASE_DEST, "closed")
+CLOSED_DIR = os.paSth.join(BASE_DEST, "closed")
 
 # Create the destination folders
 os.makedirs(OPEN_DIR, exist_ok=True)
