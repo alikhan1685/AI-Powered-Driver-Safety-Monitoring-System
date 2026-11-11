@@ -1,12 +1,9 @@
-# Ignore virtual environment
 .venv/
-
-# Ignore heavy datasets
-archive (1)/
 dataset/
 old_dataset/
+archive (1)/
+archive (1).zip
+*.h5
+*.keras
 *.zip
-
-# Ignore Python cache
 __pycache__/
-*.pyc
