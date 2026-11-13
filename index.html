@@ -51,7 +51,7 @@ select,input[type=range]{width:100%}select{padding:6px;border-radius:8px;border:
 </head>
 <body>
 <header>
-  <div><h1>Driver Monitoring System</h1><small>A watchful eye on every journey</small></div>
+  <div><h1>AI Powered Driver Monitoring System</h1><small>A watchful eye on every journey</small></div>
   <div class="row"><button id="theme" aria-label="Toggle theme">Theme</button><span class="pill">System online</span></div>
 </header>
  
@@ -64,7 +64,6 @@ select,input[type=range]{width:100%}select{padding:6px;border-radius:8px;border:
     <div class="video">
       <video id="video" autoplay playsinline muted></video>
       <canvas id="overlay"></canvas>
-      <div class="empty" id="empty">Camera is off.<br>Select Start camera to begin.</div>
       <span class="tag" style="left:10px" id="rec">REC --:--:--</span>
       <span class="tag" style="right:10px" id="fps">FPS --</span>
       <div class="bar"><span>Eye: <b data-k="eyeState">--</b></span><span>Closure: <b data-k="closure">--</b></span><span>Latency: <b data-k="latency">--</b></span><span>EAR: <b data-k="ear">--</b></span><span>MAR: <b data-k="mar">--</b></span><span>Attention: <b data-k="attention">--</b></span></div>
@@ -78,8 +77,7 @@ select,input[type=range]{width:100%}select{padding:6px;border-radius:8px;border:
         <div class="ring" id="ring"><div><span><span id="score">--</span><small>Attention score</small></span></div></div>
         <div><div class="sub">Driver is</div><div id="state">--</div><div class="sub" id="advice">Waiting for data</div></div>
       </div>
-      <div class="note">Experimental estimate only. Not a medical diagnosis or validated fatigue score.</div>
-    </section>
+        </section>
  
     <section class="card">
       <h2>Driver metrics</h2><div class="sub">Real-time eye state, temporal closure and latency</div>
@@ -100,14 +98,13 @@ select,input[type=range]{width:100%}select{padding:6px;border-radius:8px;border:
       <label for="src">Camera source</label><select id="src"><option>Default camera</option></select>
       <label for="sens">Detection sensitivity</label><input id="sens" type="range" min="1" max="10" value="5">
       <label for="res">Resolution</label><select id="res"><option>640 &times; 480</option><option>1280 &times; 720</option></select>
-      <label><input type="checkbox" id="lm" checked> Show facial landmarks</label>
     </section>
  
     <section class="card">
       <div class="row"><div><h2>Alert system</h2><div class="sub">Three-stage escalating audio-visual directives</div></div><button id="prev">Preview alert</button></div>
       <div class="stage" id="s0">Normal monitoring &ndash; Attentive</div>
-      <div class="stage" id="s1">Stage 1 &ndash; Early warning <span class="sub">(add message later)</span></div>
-      <div class="stage" id="s2">Stage 2 &ndash; Critical alert <span class="sub">(add message later)</span></div>
+      <div class="stage" id="s1">Stage 1 &ndash; Early warning <span class="sub"></span></div>
+      <div class="stage" id="s2">Stage 2 &ndash; Critical alert <span class="sub"></span></div>
     </section>
  
     <section class="card">
