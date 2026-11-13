@@ -47,6 +47,7 @@ select,input[type=range]{width:100%}select{padding:6px;border-radius:8px;border:
 @media (max-width:860px){main{grid-template-columns:1fr}.bottom{grid-template-columns:1fr}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
 </head>
 <body>
 <header>
@@ -88,6 +89,7 @@ select,input[type=range]{width:100%}select{padding:6px;border-radius:8px;border:
       <div class="m"><div class="row"><span>Closure duration</span><b data-k="closure">--</b></div><div class="track"><i id="b-closure" style="background:var(--red)"></i></div></div>
       <div class="m"><div class="row"><span>Mouth openness (MAR)</span><b data-k="mar">--</b></div><div class="track"><i id="b-mar" style="background:var(--amber)"></i></div></div>
       <div class="m"><div class="row"><span>Blink rate</span><b data-k="blink">--</b></div><div class="track"><i id="b-blink" style="background:var(--purple)"></i></div></div>
+      <div class="m"><div class="row"><span>Drowsiness model (face)</span><b data-k="drowsy">--</b></div><div class="track"><i id="b-drowsy" style="background:var(--amber)"></i></div></div>
       <div class="m"><div class="row"><span>Inference latency</span><b data-k="latency">--</b></div></div>
     </section>
   </aside>
@@ -133,6 +135,7 @@ function updateDashboard(d){
   if(d.closure!=null){set('closure',d.closure.toFixed(2)+'s');bar('#b-closure',d.closure*50)}
   if(d.mar!=null){set('mar',d.mar.toFixed(2));bar('#b-mar',d.mar*100)}
   if(d.blink!=null){set('blink',d.blink+' bpm');bar('#b-blink',d.blink*2)}
+  if(d.drowsy!=null){set('drowsy',Math.round(d.drowsy*100)+'%');bar('#b-drowsy',d.drowsy*100)}
   if(d.latency!=null)set('latency',d.latency+' ms');
   if(d.fps!=null)$('#fps').textContent='FPS '+d.fps;
   if(d.level!=null)$('#level').textContent=d.level;
@@ -173,6 +176,53 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const ear = p => (dist(p[1], p[5]) + dist(p[2], p[4])) / (2 * dist(p[0], p[3]));
 const LEFT = [33, 160, 158, 133, 153, 144], RIGHT = [362, 385, 387, 263, 373, 380];
  
+/* ===== ALERTS: beep + email ===== */
+const EMAIL = {
+  enabled: false,                    // set true after filling the keys below
+  publicKey: "YOUR_PUBLIC_KEY",
+  serviceId: "YOUR_SERVICE_ID",
+  templateId: "YOUR_TEMPLATE_ID",
+  to: "you@example.com",
+  cooldownMs: 5 * 60 * 1000          // at most one email every 5 minutes
+};
+let audioCtx = null, beepTimer = null, lastEmail = 0;
+function beep(freq = 880, dur = 0.25) {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  audioCtx.resume();
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.frequency.value = freq; g.gain.value = 0.3;
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(); o.stop(audioCtx.currentTime + dur);
+}
+function stopAlarm() { clearInterval(beepTimer); beepTimer = null; }
+function startAlarm(stage) {
+  stopAlarm();
+  beep(stage === 2 ? 1000 : 700);
+  if (stage === 2) beepTimer = setInterval(() => beep(1000), 600);
+}
+async function sendEmail(closure) {
+  if (!EMAIL.enabled || Date.now() - lastEmail < EMAIL.cooldownMs) return;
+  lastEmail = Date.now();
+  try {
+    emailjs.init({ publicKey: EMAIL.publicKey });
+    await emailjs.send(EMAIL.serviceId, EMAIL.templateId, {
+      to_email: EMAIL.to,
+      stage: "Stage 2 - Critical",
+      closure: closure.toFixed(1) + " s",
+      time: new Date().toLocaleString(),
+      message: "Driver drowsiness detected. Eyes closed for " + closure.toFixed(1) + " seconds."
+    });
+    logEvent("Alert email sent");
+  } catch (e) { logEvent("Email failed"); }
+}
+function onStage(stage, closure) {
+  if (stage === 0) { stopAlarm(); return; }
+  startAlarm(stage);
+  if (stage === 2) sendEmail(closure);
+}
+document.getElementById("camBtn").addEventListener("click", () => { beep(1, 0.01); });  // unlocks audio
+document.getElementById("prev").addEventListener("click", () => { beep(1000, 0.4); });
+ 
 /* ===== EYE CNN SETTINGS (match your training) ===== */
 const SIZE = 64;
 const CHANNELS = 1;
@@ -197,6 +247,29 @@ function eyeClosedProb(p, idx) {
   });
 }
  
+/* ===== DROWSINESS CNN SETTINGS (face model, 96x96 RGB, 1 sigmoid output) ===== */
+const DSIZE = 96;
+const DROWSY_ONE_IS_DROWSY = true;     // if the % is reversed (high when alert), change to false
+const DROWSY_EVERY = 3;                // run every 3rd frame to keep FPS high
+let drowsyCnn = null, dSmooth = 0, frameNo = 0;
+const dcv = document.createElement("canvas");
+dcv.width = dcv.height = DSIZE;
+const dcx = dcv.getContext("2d", { willReadFrequently: true });
+ 
+function faceDrowsyProb(p) {
+  const vw = video.videoWidth, vh = video.videoHeight;
+  let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
+  for (const q of p) { if (q.x < x0) x0 = q.x; if (q.x > x1) x1 = q.x; if (q.y < y0) y0 = q.y; if (q.y > y1) y1 = q.y; }
+  const side = Math.max((x1 - x0) * vw, (y1 - y0) * vh) * 1.15;
+  const mx = (x0 + x1) / 2 * vw, my = (y0 + y1) / 2 * vh;
+  dcx.drawImage(video, mx - side / 2, my - side / 2, side, side, 0, 0, DSIZE, DSIZE);
+  return tf.tidy(() => {
+    const x = tf.browser.fromPixels(dcv, 3).toFloat().div(255).expandDims(0);
+    const v = drowsyCnn.predict(x).dataSync()[0];
+    return DROWSY_ONE_IS_DROWSY ? v : 1 - v;
+  });
+}
+ 
 async function loadModel() {
   logEvent("Loading model...");
   const files = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
@@ -205,6 +278,8 @@ async function loadModel() {
     runningMode: "VIDEO", numFaces: 1
   });
   cnn = await tf.loadLayersModel("model_eye_state_cnn/model.json");
+  try { drowsyCnn = await tf.loadLayersModel("model_drowsiness_cnn/model.json"); }
+  catch (e) { console.error(e); logEvent("Drowsiness model failed to load (eye model still works)"); }
   logEvent("Model ready");
 }
  
@@ -214,36 +289,42 @@ video.addEventListener("loadeddata", async () => {
 });
  
 function loop(id) {
-  if (id !== run || !video.srcObject) return;
+  if (id !== run || !video.srcObject) { stopAlarm(); return; }
   if (video.currentTime !== lastTime) {
     lastTime = video.currentTime;
     const t0 = performance.now();
     const res = landmarker.detectForVideo(video, t0);
-    const latency = Math.round(performance.now() - t0);
     if (res.faceLandmarks.length) {
       const p = res.faceLandmarks[0];
       const e = (ear(LEFT.map(i => p[i])) + ear(RIGHT.map(i => p[i]))) / 2;
       const mar = dist(p[13], p[14]) / dist(p[78], p[308]);
       const pClosed = (eyeClosedProb(p, LEFT) + eyeClosedProb(p, RIGHT)) / 2;
       const closed = pClosed > 0.5;           /* tune this threshold */
+      if (drowsyCnn && frameNo++ % DROWSY_EVERY === 0) {
+        dSmooth = 0.7 * dSmooth + 0.3 * faceDrowsyProb(p);   // smoothed so one bad frame can't trigger
+        console.log("eye closed:", pClosed.toFixed(2), "| face drowsy:", dSmooth.toFixed(2));
+      }
+      const latency = Math.round(performance.now() - t0);
       const now = performance.now();
       closedStart = closed ? (closedStart ?? now) : null;
       if (wasClosed && !closed) blinks.push(now);
       wasClosed = closed;
       blinks = blinks.filter(b => now - b < 60000);
       const closure = closedStart ? (now - closedStart) / 1000 : 0;
-      const stage = closure > 2 ? 2 : closure > 1 ? 1 : 0;
+      let stage = closure > 2 ? 2 : closure > 1 ? 1 : 0;
+      if (drowsyCnn && dSmooth > 0.8) stage = Math.max(stage, 1);   // face model gives early warning
       frames++;
       if (now - fpsStart >= 1000) { fps = frames; frames = 0; fpsStart = now; }
       updateDashboard({
-        attention: Math.max(0, Math.round(100 - closure * 40)),
+        attention: Math.max(0, Math.round(100 - closure * 40 - (drowsyCnn ? dSmooth * 30 : 0))),
+        drowsy: drowsyCnn ? dSmooth : undefined,
         eyeState: closed ? "Closed" : "Open", ear: e, closure, mar,
         blink: blinks.length, latency, fps,
         level: stage ? "Alert" : "Normal",
         state: stage ? "Drowsy" : "Attentive",
         advice: stage ? "Pull over safely and rest" : "Stay attentive", stage
       });
-      if (stage !== lastStage) { logEvent(stage ? "Drowsiness stage " + stage : "Back to normal"); lastStage = stage; }
+      if (stage !== lastStage) { logEvent(stage ? "Drowsiness stage " + stage : "Back to normal"); onStage(stage, closure); lastStage = stage; }
     } else { set("eyeState", "No face"); }
   }
   requestAnimationFrame(() => loop(id));
