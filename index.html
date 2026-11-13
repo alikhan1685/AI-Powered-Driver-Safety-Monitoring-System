@@ -54,7 +54,7 @@ select,input[type=range]{width:100%}select{padding:6px;border-radius:8px;border:
   <div><h1>AI Powered Driver Monitoring System</h1><small>A watchful eye on every journey</small></div>
   <div class="row"><button id="theme" aria-label="Toggle theme">Theme</button><span class="pill">System online</span></div>
 </header>
- 
+
 <main>
   <section class="card">
     <div class="row">
@@ -69,7 +69,6 @@ select,input[type=range]{width:100%}select{padding:6px;border-radius:8px;border:
       <div class="bar"><span>Eye: <b data-k="eyeState">--</b></span><span>Closure: <b data-k="closure">--</b></span><span>Latency: <b data-k="latency">--</b></span><span>EAR: <b data-k="ear">--</b></span><span>MAR: <b data-k="mar">--</b></span><span>Attention: <b data-k="attention">--</b></span></div>
     </div>
   </section>
- 
   <aside class="stack">
     <section class="card">
       <div class="row"><h2>Driver status</h2><span class="pill" id="level">--</span></div>
@@ -78,7 +77,7 @@ select,input[type=range]{width:100%}select{padding:6px;border-radius:8px;border:
         <div><div class="sub">Driver is</div><div id="state">--</div><div class="sub" id="advice">Waiting for data</div></div>
       </div>
         </section>
- 
+
     <section class="card">
       <h2>Driver metrics</h2><div class="sub">Real-time eye state, temporal closure and latency</div>
       <div class="m"><div class="row"><span>Attention score</span><b data-k="attention">--</b></div><div class="track"><i id="b-attention" style="background:var(--green)"></i></div></div>
@@ -91,7 +90,7 @@ select,input[type=range]{width:100%}select{padding:6px;border-radius:8px;border:
       <div class="m"><div class="row"><span>Inference latency</span><b data-k="latency">--</b></div></div>
     </section>
   </aside>
- 
+
   <div class="bottom">
     <section class="card">
       <h2>Camera controls</h2>
@@ -99,27 +98,19 @@ select,input[type=range]{width:100%}select{padding:6px;border-radius:8px;border:
       <label for="sens">Detection sensitivity</label><input id="sens" type="range" min="1" max="10" value="5">
       <label for="res">Resolution</label><select id="res"><option>640 &times; 480</option><option>1280 &times; 720</option></select>
     </section>
- 
     <section class="card">
       <div class="row"><div><h2>Alert system</h2><div class="sub">Three-stage escalating audio-visual directives</div></div><button id="prev">Preview alert</button></div>
       <div class="stage" id="s0">Normal monitoring &ndash; Attentive</div>
       <div class="stage" id="s1">Stage 1 &ndash; Early warning <span class="sub"></span></div>
       <div class="stage" id="s2">Stage 2 &ndash; Critical alert <span class="sub"></span></div>
     </section>
- 
     <section class="card">
       <div class="row"><div><h2>Event log</h2><div class="sub">Timestamps, alert stages and duration metrics</div></div><button id="clear">Clear log</button></div>
       <ul id="log"><li><time>--:--</time>No events yet</li></ul>
     </section>
   </div>
 </main>
- 
 <script>
-/* ===== PLUG YOUR MODEL IN HERE =====
-   Call updateDashboard() from your detection loop with any of these fields.
-   Leave out a field and it stays as "--".
-   updateDashboard({attention:67, eyeState:"Open", ear:0.34, closure:0, mar:0.1, blink:21, latency:59, fps:30, level:"Normal", state:"Drowsy", advice:"Pull over safely", stage:0})
-*/
 const $=s=>document.querySelector(s), all=s=>document.querySelectorAll(s);
 const set=(k,v)=>all('[data-k="'+k+'"]').forEach(e=>e.textContent=v);
 const bar=(id,pct)=>{const e=$(id);if(e)e.style.width=Math.max(0,Math.min(100,pct))+'%'};
@@ -141,8 +132,6 @@ function updateDashboard(d){
   if(d.stage!=null)setStage(d.stage);
 }
 window.updateDashboard=updateDashboard;window.logEvent=logEvent;
- 
-/* camera */
 let stream=null,t0=0,timer=null;
 async function start(){
   try{
@@ -151,7 +140,6 @@ async function start(){
     const b=$('#camBtn');b.textContent='Stop camera';b.className='stop';
     t0=Date.now();timer=setInterval(()=>{const s=Math.floor((Date.now()-t0)/1000);$('#rec').textContent='REC '+[s/3600,s/60%60,s%60].map(x=>String(Math.floor(x)).padStart(2,'0')).join(':')},1000);
     logEvent('Camera started');
-    /* TODO: start your detection loop here, reading frames from #video */
   }catch(e){logEvent('Camera unavailable: allow camera access and use HTTPS')}
 }
 function stop(){
@@ -172,15 +160,13 @@ let blinks = [], lastStage = 0, frames = 0, fpsStart = performance.now(), fps = 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const ear = p => (dist(p[1], p[5]) + dist(p[2], p[4])) / (2 * dist(p[0], p[3]));
 const LEFT = [33, 160, 158, 133, 153, 144], RIGHT = [362, 385, 387, 263, 373, 380];
- 
-/* ===== ALERTS: beep + email ===== */
-const EMAIL = {
-  enabled: false,                    // set true after filling the keys below
+ const EMAIL = {
+  enabled: false,                    
   publicKey: "YOUR_PUBLIC_KEY",
   serviceId: "YOUR_SERVICE_ID",
   templateId: "YOUR_TEMPLATE_ID",
   to: "you@example.com",
-  cooldownMs: 5 * 60 * 1000          // at most one email every 5 minutes
+  cooldownMs: 5 * 60 * 1000          
 };
 let audioCtx = null, beepTimer = null, lastEmail = 0;
 function beep(freq = 880, dur = 0.25) {
@@ -219,8 +205,6 @@ function onStage(stage, closure) {
 }
 document.getElementById("camBtn").addEventListener("click", () => { beep(1, 0.01); });  // unlocks audio
 document.getElementById("prev").addEventListener("click", () => { beep(1000, 0.4); });
- 
-/* ===== EYE CNN SETTINGS (match your training) ===== */
 const SIZE = 64;
 const CHANNELS = 1;
 const SIGMOID_ONE_IS_CLOSED = false;   // if open/closed looks reversed, change to true
@@ -228,7 +212,7 @@ let cnn = null;
 const cv = document.createElement("canvas");
 cv.width = cv.height = SIZE;
 const cx = cv.getContext("2d", { willReadFrequently: true });
- 
+
 function eyeClosedProb(p, idx) {
   const vw = video.videoWidth, vh = video.videoHeight;
   const xs = idx.map(i => p[i].x * vw), ys = idx.map(i => p[i].y * vh);
@@ -243,8 +227,6 @@ function eyeClosedProb(p, idx) {
     return SIGMOID_ONE_IS_CLOSED ? out[0] : 1 - out[0];
   });
 }
- 
-/* ===== DROWSINESS CNN SETTINGS (face model, 96x96 RGB, 1 sigmoid output) ===== */
 const DSIZE = 96;
 const DROWSY_ONE_IS_DROWSY = true;     // if the % is reversed (high when alert), change to false
 const DROWSY_EVERY = 3;                // run every 3rd frame to keep FPS high
@@ -268,7 +250,7 @@ return DROWSY_ONE_IS_DROWSY ? v : 1 - v;
     return DROWSY_ONE_IS_DROWSY ? v : 1 - v;
   });
 }
- 
+
 async function loadModel() {
   logEvent("Loading model...");
   const files = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
@@ -281,12 +263,11 @@ async function loadModel() {
   catch (e) { console.error(e); logEvent("Drowsiness model failed to load (eye model still works)"); }
   logEvent("Model ready");
 }
- 
 video.addEventListener("loadeddata", async () => {
   try { if (!landmarker) await loadModel(); } catch (e) { logEvent("Model failed to load"); return; }
   const id = ++run; loop(id);
 });
- 
+
 function loop(id) {
   if (id !== run || !video.srcObject) { stopAlarm(); return; }
   if (video.currentTime !== lastTime) {
@@ -298,9 +279,9 @@ function loop(id) {
       const e = (ear(LEFT.map(i => p[i])) + ear(RIGHT.map(i => p[i]))) / 2;
       const mar = dist(p[13], p[14]) / dist(p[78], p[308]);
       const pClosed = (eyeClosedProb(p, LEFT) + eyeClosedProb(p, RIGHT)) / 2;
-      const closed = pClosed > 0.5;           /* tune this threshold */
+      const closed = pClosed > 0.5;           
       if (drowsyCnn && frameNo++ % DROWSY_EVERY === 0) {
-        dSmooth = 0.7 * dSmooth + 0.3 * faceDrowsyProb(p);   // smoothed so one bad frame can't trigger
+        dSmooth = 0.7 * dSmooth + 0.3 * faceDrowsyProb(p);   
         console.log("eye closed:", pClosed.toFixed(2), "| face drowsy:", dSmooth.toFixed(2));
       }
       const latency = Math.round(performance.now() - t0);
