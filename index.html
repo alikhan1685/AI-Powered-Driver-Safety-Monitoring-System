@@ -263,6 +263,8 @@ function faceDrowsyProb(p) {
   return tf.tidy(() => {
     const x = tf.browser.fromPixels(dcv, 3).toFloat().div(255).expandDims(0);
     const v = drowsyCnn.predict(x).dataSync()[0];
+console.log("Raw Drowsiness CNN:", v);
+return DROWSY_ONE_IS_DROWSY ? v : 1 - v;
     return DROWSY_ONE_IS_DROWSY ? v : 1 - v;
   });
 }
