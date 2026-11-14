@@ -1,4 +1,4 @@
-# Driver Monitoring System
+# AI-Powered Driver Monitoring System
 
 AI-Powered Truck Driver Safety Monitoring System: real-time drowsiness detection in the browser.
 
@@ -154,10 +154,10 @@ Both models were trained in Keras and exported to TensorFlow.js format (`model.j
 
 **Results**
 
-| Model | Accuracy | Precision | Recall |
-|---|---|---|---|
-| Eye state CNN | 95% | [to be added] | [to be added] |
-| Face drowsiness CNN | 95% | [to be added] | [to be added] |
+| Model | Accuracy |
+|---|---|
+| Eye state CNN | 95% |
+| Face drowsiness CNN | 95% |
 
 Measured in the browser: frame rate [to be added], latency [to be added] ms.
 
@@ -229,4 +229,4 @@ Emails are sent at most once every five minutes. Because the public key is visib
 | OpenCV | Camera feed in the desktop version |
 | Web Audio API | Audio alerts |
 | EmailJS | Optional email alerts |
-| GitHub Pages or Netlify | Hosting |
+| Netlify | Hosting |
