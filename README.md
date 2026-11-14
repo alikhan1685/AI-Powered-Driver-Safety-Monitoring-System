@@ -130,16 +130,6 @@ The web application itself requires no installation.
 
 Do not open `index.html` directly from the file system. Camera access and model loading require `http://localhost` or HTTPS.
 
-### Diagnostic options
-
-Append these to the address to compare behaviour with the desktop version.
-
-| Address | Effect |
-|---|---|
-| `/?bgr=0` | Pass RGB instead of BGR pixels to the face model |
-| `/?gamma=1` | Disable the brightening step |
-| `/?debug=1` | Display the exact eye and face crops passed to the models |
-
 ### Desktop version
 
 ```bash
@@ -166,8 +156,8 @@ Both models were trained in Keras and exported to TensorFlow.js format (`model.j
 
 | Model | Accuracy | Precision | Recall |
 |---|---|---|---|
-| Eye state CNN | [to be added] | [to be added] | [to be added] |
-| Face drowsiness CNN | [to be added] | [to be added] | [to be added] |
+| Eye state CNN | 95% | [to be added] | [to be added] |
+| Face drowsiness CNN | 95% | [to be added] | [to be added] |
 
 Measured in the browser: frame rate [to be added], latency [to be added] ms.
 
